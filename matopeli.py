@@ -30,13 +30,21 @@ mato.penup()
 mato.goto(0, 0)
 mato.direction = "stop"
 
-# Omena
+# Punainen omena
 omena = turtle.Turtle()
 omena.speed(0)
 omena.shape("circle")
 omena.color("red")
 omena.penup()
 omena.goto(0, 100)
+
+# Bonus omena
+bonus_omena = turtle.Turtle()
+bonus_omena.speed(0)
+bonus_omena.shape("circle")
+bonus_omena.color("yellow")
+bonus_omena.penup()
+bonus_omena.goto(1000, 1000)
 
 # Mato kehon osat
 keho_osat = []
@@ -71,7 +79,6 @@ def liiku():
 def lopeta():
     global kaynnissa
     kaynnissa = False
-
 
 def nayta_pisteet():
     global pistelista
@@ -120,6 +127,8 @@ REUNAT_Y = (-290, 290)
 TEKSTI_TAUKO_POS = (-80, 0)
 TEKSTI_PELI_LOPPU_POS = (-80, 0)
 TEKSTI_PISTEET_AIKA_POS = (-250, 250)
+OMENA_PISTE = 10
+VIIVE_VAHENNYS = 0.001
 
 def paivita_teksti():
     global teksti_pisteet
@@ -155,6 +164,9 @@ def uusi_peli():
 
     # Arvo uusi omenan paikka
     siirra_omena_uuteenpos()
+
+    # Tuhoa entinen bonus omena jos se jäi kentälle
+    tuhoa_bonus_omena()
 
     # Nollaa asetukset
     pisteet = 0
@@ -205,34 +217,97 @@ def tarkista_tormays_reunoihin():
         mato.ycor() > REUNAT_Y[1] or mato.ycor() < REUNAT_Y[0]):
         uusi_peli()
 
+def lisaa_mato_osa():
+    global keho_osat, mato
+    uusi_osa = turtle.Turtle()
+    uusi_osa.shape("square")
+    uusi_osa.color("dark green")
+    uusi_osa.penup()
+    if len(keho_osat) > 0:
+        uusi_osa.setpos(keho_osat[-1].pos())
+    else:
+        uusi_osa.setpos(mato.pos())
+    keho_osat.append(uusi_osa)
+
+def satunnainen_paikka():
+    y = random.randint(REUNAT_Y[0], REUNAT_Y[1])
+    x = random.randint(REUNAT_X[0], REUNAT_X[1])
+    return (x, y)
+
+bonus_omena.nakyvissa = False
+bonus_omena.aikaa_jaljella_haviamiseen = 8
+bonus_omena.aikaa_jaljella_uusibonus = random.randint(3, 7) # Ensimmäinen bonus tulee aikaisemmin
+
+def uusi_bonus_omena():
+    global bonus_omena
+
+    bonus_omena.nakyvissa = True
+    paikka = satunnainen_paikka()
+    bonus_omena.setpos(paikka[0], paikka[1])
+    bonus_omena.aikaa_jaljella_uusibonus = 0
+    bonus_omena.aikaa_jaljella_haviamiseen = 8
+    bonus_omena.vari = 0
+
+def tuhoa_bonus_omena():
+    global bonus_omena
+
+    bonus_omena.setpos(1000, 1000)
+    bonus_omena.nakyvissa = False
+    bonus_omena.aikaa_jaljella_uusibonus = random.randint(3, 15)
+
+def tarkista_bonus_omena():
+    global bonus_omena, viive, pisteet, mato
+    #print(f"uusi {bonus_omena.aikaa_jaljella_uusibonus}, h {bonus_omena.aikaa_jaljella_haviamiseen}")
+    if not bonus_omena.nakyvissa:
+        if bonus_omena.aikaa_jaljella_uusibonus < 0:
+            uusi_bonus_omena()
+        else:
+            bonus_omena.aikaa_jaljella_uusibonus -= viive
+    else:
+        if mato.distance(bonus_omena) < RUUTU_KOKO:
+            # Lisää kehon osa
+            lisaa_mato_osa()
+            lisaa_mato_osa()
+
+            viive -= VIIVE_VAHENNYS*2
+            pisteet += OMENA_PISTE*2
+            tuhoa_bonus_omena()
+
+        if bonus_omena.aikaa_jaljella_haviamiseen < 0:
+            tuhoa_bonus_omena()
+        else:
+            # Muuta bonuksen väriä jäljellä olevan ajan mukaan
+            vari = max(min(1,bonus_omena.vari), 0)
+            bonus_omena.color(1,1,0 + vari)
+            bonus_omena.aikaa_jaljella_haviamiseen -= viive
+            if bonus_omena.vari == None:
+                bonus_omena.vari = 0
+            else:
+                bonus_omena.vari += viive/10
+
+
 def tarkista_tormays_omena():
-    global viive, pisteet, omena, keho_osat, mato
+    global viive, pisteet, omena, mato
     if mato.distance(omena) < RUUTU_KOKO:
         siirra_omena_uuteenpos()
 
-        # Lisää kehon osa
-        uusi_osa = turtle.Turtle()
-        uusi_osa.shape("square")
-        uusi_osa.color("dark green")
-        uusi_osa.penup()
-        keho_osat.append(uusi_osa)
+        lisaa_mato_osa()
 
-        viive -= 0.001
-        pisteet += 10
+        viive -= VIIVE_VAHENNYS
+        pisteet += OMENA_PISTE
 
 def tarkista_tormays_itseensa():
     global keho_osat, mato
     for osa in keho_osat:
         if osa.distance(mato) < RUUTU_KOKO:
             uusi_peli()
-    paivita_teksti()
 
 def siirra_mato():
     global keho_osat, mato
     for i in range(len(keho_osat)-1, 0, -1):
-            x = keho_osat[i-1].xcor()
-            y = keho_osat[i-1].ycor()
-            keho_osat[i].goto(x, y)
+        x = keho_osat[i-1].xcor()
+        y = keho_osat[i-1].ycor()
+        keho_osat[i].goto(x, y)
 
     if len(keho_osat) > 0:
         x = mato.xcor()
@@ -242,9 +317,14 @@ def siirra_mato():
 # Pääsilmukka
 kaynnissa = True
 peli_tauko = False
-
 edellinen_aika = time.time()
+edellinen_tick = time.time()
+SUURIN_SALLITTU_FPS = 60
+ruudunpaivitys_aikavali_ms = (1.0 / SUURIN_SALLITTU_FPS) * 1000
+edellinen_ruudunpaivitys = time.time()
+
 lue_pisteet()
+
 while kaynnissa:
     ikkuna.update()
 
@@ -252,22 +332,41 @@ while kaynnissa:
         time.sleep(viive)
         continue
 
-    tarkista_tormays_reunoihin()
-    tarkista_tormays_omena()
+    paivita_teksti()
 
-    # Siirrä kehon osat
-    siirra_mato()
+    # Rajoita haluttuun ruudunpäivitys nopeuteen
+    aika_ruudunpaivitys = time.time() - edellinen_ruudunpaivitys
+    aika_ruudunpaivitys *= 1000 #käännä ms
+    odotettava_aika = ruudunpaivitys_aikavali_ms - aika_ruudunpaivitys
+    #print(f"ruudunpäivitys: {aika_ruudunpaivitys}/{ruudunpaivitys_aikavali_ms}, odotetaan {odotus_aika}")
+    if aika_ruudunpaivitys < ruudunpaivitys_aikavali_ms:
+        time.sleep(max(0, odotettava_aika / 1000))
+        continue
+    else:
+        edellinen_ruudunpaivitys = time.time()
 
-    liiku()
-
-    # Tarkista törmäys kehon osiin
-    tarkista_tormays_itseensa()
     # Päivitä ajastin
     aika_kulunut = time.time() - edellinen_aika
     edellinen_aika = time.time()
     aika += aika_kulunut
 
-    time.sleep(viive)
+    # Rajoita pelin nopeus
+    # TODO
+    aika_kulunut_edellisesta_tick = time.time() - edellinen_tick
+    if aika_kulunut_edellisesta_tick < viive:
+        #time.sleep(0.016)
+        #aika -= 0.016
+        continue
+    edellinen_tick = time.time()
+
+    tarkista_tormays_reunoihin()
+    tarkista_tormays_omena()
+    tarkista_bonus_omena()
+    siirra_mato()
+    liiku()
+    tarkista_tormays_itseensa()
+
+    #time.sleep(viive)
 
 ikkuna.bye()
 #ikkuna.mainloop()
