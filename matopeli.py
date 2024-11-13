@@ -57,16 +57,16 @@ def mene_oikealle():
 def liiku():
     if mato.direction == "up":
         y = mato.ycor()
-        mato.sety(y + 20)
+        mato.sety(y + RUUTU_KOKO)
     if mato.direction == "down":
         y = mato.ycor()
-        mato.sety(y - 20)
+        mato.sety(y - RUUTU_KOKO)
     if mato.direction == "left":
         x = mato.xcor()
-        mato.setx(x - 20)
+        mato.setx(x - RUUTU_KOKO)
     if mato.direction == "right":
         x = mato.xcor()
-        mato.setx(x + 20)
+        mato.setx(x + RUUTU_KOKO)
 
 def lopeta():
     global kaynnissa
@@ -110,6 +110,10 @@ aika = 0
 teksti_pisteet = turtle.Turtle()
 teksti_peli_loppu = turtle.Turtle()
 teksti_tauko = turtle.Turtle()
+
+RUUTU_KOKO = 20
+RUUTU_LEVEYS = 30
+RUUTU_PITUUS = 30
 
 REUNAT_X = (-290, 290)
 REUNAT_Y = (-290, 290)
@@ -195,6 +199,46 @@ def siirra_omena_uuteenpos():
     x = random.randint(REUNAT_X[0], REUNAT_X[1])
     omena.goto(x, y)
 
+def tarkista_tormays_reunoihin():
+    global mato
+    if (mato.xcor() > REUNAT_X[1] or mato.xcor() < REUNAT_X[0] or
+        mato.ycor() > REUNAT_Y[1] or mato.ycor() < REUNAT_Y[0]):
+        uusi_peli()
+
+def tarkista_tormays_omena():
+    global viive, pisteet, omena, keho_osat, mato
+    if mato.distance(omena) < RUUTU_KOKO:
+        siirra_omena_uuteenpos()
+
+        # Lisää kehon osa
+        uusi_osa = turtle.Turtle()
+        uusi_osa.shape("square")
+        uusi_osa.color("dark green")
+        uusi_osa.penup()
+        keho_osat.append(uusi_osa)
+
+        viive -= 0.001
+        pisteet += 10
+
+def tarkista_tormays_itseensa():
+    global keho_osat, mato
+    for osa in keho_osat:
+        if osa.distance(mato) < RUUTU_KOKO:
+            uusi_peli()
+    paivita_teksti()
+
+def siirra_mato():
+    global keho_osat, mato
+    for i in range(len(keho_osat)-1, 0, -1):
+            x = keho_osat[i-1].xcor()
+            y = keho_osat[i-1].ycor()
+            keho_osat[i].goto(x, y)
+
+    if len(keho_osat) > 0:
+        x = mato.xcor()
+        y = mato.ycor()
+        keho_osat[0].goto(x, y)
+
 # Pääsilmukka
 kaynnissa = True
 peli_tauko = False
@@ -208,42 +252,16 @@ while kaynnissa:
         time.sleep(viive)
         continue
 
-    # Tarkista törmäys reunoihin
-    if mato.xcor() > REUNAT_X[1] or mato.xcor() < REUNAT_X[0] or mato.ycor() > REUNAT_Y[1] or mato.ycor() < REUNAT_Y[0]:
-        uusi_peli()
+    tarkista_tormays_reunoihin()
+    tarkista_tormays_omena()
 
-    # Tarkista törmäys omenaan
-    if mato.distance(omena) < 20:
-        siirra_omena_uuteenpos()
-
-        # Lisää kehon osa
-        uusi_osa = turtle.Turtle()
-        uusi_osa.shape("square")
-        uusi_osa.color("dark green")
-        uusi_osa.penup()
-        keho_osat.append(uusi_osa)
-
-        viive -= 0.001
-        pisteet += 10
     # Siirrä kehon osat
-    for i in range(len(keho_osat)-1, 0, -1):
-        x = keho_osat[i-1].xcor()
-        y = keho_osat[i-1].ycor()
-        keho_osat[i].goto(x, y)
-
-    if len(keho_osat) > 0:
-        x = mato.xcor()
-        y = mato.ycor()
-        keho_osat[0].goto(x, y)
+    siirra_mato()
 
     liiku()
 
     # Tarkista törmäys kehon osiin
-    for osa in keho_osat:
-        if osa.distance(mato) < 20:
-            uusi_peli()
-    paivita_teksti()
-
+    tarkista_tormays_itseensa()
     # Päivitä ajastin
     aika_kulunut = time.time() - edellinen_aika
     edellinen_aika = time.time()
