@@ -9,15 +9,17 @@ import tkinter.messagebox
 # Esc lopettaa, X painaminen ei kaada peliä.
 # Aika ja pisteet teksti
 # Pisteiden tallennus
+# Mahdollisuus poistaa seinät käytöstä
 
 # asetukset
+VERSIO = 1.0
 viive = 0.1
 pisteet = 0
 pistelista = [("Tyhjä", 0), ("Tyhjä", 0), ("Tyhjä", 0)]
 
 # Ruudun asetukset
 ikkuna = turtle.Screen()
-ikkuna.title("Matopeli - F1) Pisteet P) Tauko")
+ikkuna.title(f"Matopeli v{VERSIO} - F1) Pisteet F2) Asetukset P) Tauko")
 ikkuna.bgcolor("black")
 ikkuna.setup(width=600, height=600)
 ikkuna.tracer(0)
@@ -100,15 +102,24 @@ def tauko():
         # Älä laske tauolla kulunutta aikaa
         edellinen_aika = time.time()
 
+def kysy_asetukset():
+    global SEINAT_KAYTOSSA
+    SEINAT_KAYTOSSA = tkinter.messagebox.askyesno("", "Otetaanko seinät käyttöön?")
+
 # Näppäinohjaus
 ikkuna.listen()
 ikkuna.onkey(mene_ylos, "Up")
+ikkuna.onkey(mene_ylos, "w")
 ikkuna.onkey(mene_alas, "Down")
+ikkuna.onkey(mene_alas, "s")
 ikkuna.onkey(mene_vasemmalle, "Left")
+ikkuna.onkey(mene_vasemmalle, "a")
 ikkuna.onkey(mene_oikealle, "Right")
+ikkuna.onkey(mene_oikealle, "d")
 ikkuna.onkey(lopeta, "Escape")
 ikkuna.onkey(tauko, "p")
 ikkuna.onkey(nayta_pisteet, "F1")
+ikkuna.onkey(kysy_asetukset, "F2")
 # Jos ikkuna suljetaan muualta, kutsu lopeta funktiota
 ikkuna._root.protocol("WM_DELETE_WINDOW", lopeta)
 
@@ -129,6 +140,7 @@ TEKSTI_PELI_LOPPU_POS = (-80, 0)
 TEKSTI_PISTEET_AIKA_POS = (-250, 250)
 OMENA_PISTE = 10
 VIIVE_VAHENNYS = 0.001
+SEINAT_KAYTOSSA = False
 
 def paivita_teksti():
     global teksti_pisteet
@@ -213,9 +225,19 @@ def siirra_omena_uuteenpos():
 
 def tarkista_tormays_reunoihin():
     global mato
-    if (mato.xcor() > REUNAT_X[1] or mato.xcor() < REUNAT_X[0] or
-        mato.ycor() > REUNAT_Y[1] or mato.ycor() < REUNAT_Y[0]):
-        uusi_peli()
+    if SEINAT_KAYTOSSA:
+        if (mato.xcor() > REUNAT_X[1] or mato.xcor() < REUNAT_X[0] or
+            mato.ycor() > REUNAT_Y[1] or mato.ycor() < REUNAT_Y[0]):
+            uusi_peli()
+    else:
+        if (mato.xcor() > REUNAT_X[1]):
+            mato.setx(REUNAT_X[0] - RUUTU_KOKO)
+        elif mato.xcor() < REUNAT_X[0]:
+            mato.setx(REUNAT_X[1] + RUUTU_KOKO)
+        elif mato.ycor() > REUNAT_Y[1]:
+            mato.sety(REUNAT_Y[0] - RUUTU_KOKO)
+        elif mato.ycor() < REUNAT_Y[0]:
+            mato.sety(REUNAT_Y[1] + RUUTU_KOKO)
 
 def lisaa_mato_osa():
     global keho_osat, mato
@@ -314,6 +336,19 @@ def siirra_mato():
         y = mato.ycor()
         keho_osat[0].goto(x, y)
 
+def odota_ruudunpaivitys():
+    global edellinen_ruudunpaivitys, ruudunpaivitys_aikavali_ms
+    aika_ruudunpaivitys = time.time() - edellinen_ruudunpaivitys
+    aika_ruudunpaivitys *= 1000 #käännä ms
+    odotettava_aika = ruudunpaivitys_aikavali_ms - aika_ruudunpaivitys
+    #print(f"ruudunpäivitys: {aika_ruudunpaivitys}/{ruudunpaivitys_aikavali_ms}, odotetaan {odotus_aika}")
+    if aika_ruudunpaivitys < ruudunpaivitys_aikavali_ms:
+        time.sleep(max(0, odotettava_aika / 1000))
+        return True
+    else:
+        edellinen_ruudunpaivitys = time.time()
+        return False
+
 # Pääsilmukka
 kaynnissa = True
 peli_tauko = False
@@ -324,6 +359,7 @@ ruudunpaivitys_aikavali_ms = (1.0 / SUURIN_SALLITTU_FPS) * 1000
 edellinen_ruudunpaivitys = time.time()
 
 lue_pisteet()
+#kysy_asetukset()
 
 while kaynnissa:
     ikkuna.update()
@@ -335,22 +371,15 @@ while kaynnissa:
     paivita_teksti()
 
     # Rajoita haluttuun ruudunpäivitys nopeuteen
-    aika_ruudunpaivitys = time.time() - edellinen_ruudunpaivitys
-    aika_ruudunpaivitys *= 1000 #käännä ms
-    odotettava_aika = ruudunpaivitys_aikavali_ms - aika_ruudunpaivitys
-    #print(f"ruudunpäivitys: {aika_ruudunpaivitys}/{ruudunpaivitys_aikavali_ms}, odotetaan {odotus_aika}")
-    if aika_ruudunpaivitys < ruudunpaivitys_aikavali_ms:
-        time.sleep(max(0, odotettava_aika / 1000))
+    if odota_ruudunpaivitys():
         continue
-    else:
-        edellinen_ruudunpaivitys = time.time()
 
     # Päivitä ajastin
     aika_kulunut = time.time() - edellinen_aika
     edellinen_aika = time.time()
     aika += aika_kulunut
 
-    # Rajoita pelin nopeus
+    # Rajoita pelin nopeutta
     # TODO
     aika_kulunut_edellisesta_tick = time.time() - edellinen_tick
     if aika_kulunut_edellisesta_tick < viive:

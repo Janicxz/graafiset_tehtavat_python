@@ -1,0 +1,17 @@
+
+build/matopeli/Analysis-00.toc
+build/matopeli/base_library.zip
+build/matopeli/EXE-00.toc
+build/matopeli/localpycs/pyimod01_archive.pyc
+build/matopeli/localpycs/pyimod02_importers.pyc
+build/matopeli/localpycs/pyimod03_ctypes.pyc
+build/matopeli/localpycs/pyimod04_pywin32.pyc
+build/matopeli/localpycs/struct.pyc
+build/matopeli/matopeli.pkg
+build/matopeli/PKG-00.toc
+build/matopeli/PYZ-00.pyz
+build/matopeli/PYZ-00.toc
+build/matopeli/warn-matopeli.txt
+build/matopeli/xref-matopeli.html
+dist/matopeli.exe
+matopeli.spec
