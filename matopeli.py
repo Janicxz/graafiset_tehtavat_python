@@ -6,12 +6,26 @@ import csv
 import tkinter.messagebox
 
 # Uudet ominaisuudet:
-# Esc lopettaa, X painaminen ei kaada peliä.
+# Esc lopettaa, X painaminen ei kaada peliä
 # Aika ja pisteet teksti
-# Pisteiden tallennus
+# Pisteiden tallennus ja luku csv tiedostosta
 # Mahdollisuus poistaa seinät käytöstä
+# Bonus omena
+# Taukotila P-näppäimellä
 
 # asetukset
+SUURIN_SALLITTU_FPS = 60
+RUUTU_KOKO = 20
+RUUTU_LEVEYS = 30
+RUUTU_PITUUS = 30
+REUNAT_X = (-290, 290)
+REUNAT_Y = (-290, 290)
+TEKSTI_TAUKO_POS = (-80, 0)
+TEKSTI_PELI_LOPPU_POS = (-80, 0)
+TEKSTI_PISTEET_AIKA_POS = (-250, 250)
+OMENA_PISTE = 10
+VIIVE_VAHENNYS = 0.001
+SEINAT_KAYTOSSA = True
 VERSIO = 1.0
 viive = 0.1
 pisteet = 0
@@ -105,6 +119,12 @@ def tauko():
 def kysy_asetukset():
     global SEINAT_KAYTOSSA
     SEINAT_KAYTOSSA = tkinter.messagebox.askyesno("", "Otetaanko seinät käyttöön?")
+    #if tkinter.messagebox.askyesno("", "Haluatko asettaa tietyn seed?"):
+    #    seed = tkinter.simpledialog.askinteger("", "Syötä seed:")
+    #try:
+    #    random.seed(seed)
+    #except:
+    #    pass
 
 # Näppäinohjaus
 ikkuna.listen()
@@ -128,19 +148,6 @@ aika = 0
 teksti_pisteet = turtle.Turtle()
 teksti_peli_loppu = turtle.Turtle()
 teksti_tauko = turtle.Turtle()
-
-RUUTU_KOKO = 20
-RUUTU_LEVEYS = 30
-RUUTU_PITUUS = 30
-
-REUNAT_X = (-290, 290)
-REUNAT_Y = (-290, 290)
-TEKSTI_TAUKO_POS = (-80, 0)
-TEKSTI_PELI_LOPPU_POS = (-80, 0)
-TEKSTI_PISTEET_AIKA_POS = (-250, 250)
-OMENA_PISTE = 10
-VIIVE_VAHENNYS = 0.001
-SEINAT_KAYTOSSA = False
 
 def paivita_teksti():
     global teksti_pisteet
@@ -354,7 +361,6 @@ kaynnissa = True
 peli_tauko = False
 edellinen_aika = time.time()
 edellinen_tick = time.time()
-SUURIN_SALLITTU_FPS = 60
 ruudunpaivitys_aikavali_ms = (1.0 / SUURIN_SALLITTU_FPS) * 1000
 edellinen_ruudunpaivitys = time.time()
 
