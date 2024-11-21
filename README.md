@@ -1,5 +1,4 @@
-# graafiset tehtavat python
-
+# Python GUI programs
 Python GUI programs made in Riveria class.
 
 # Muistio / Notepad
